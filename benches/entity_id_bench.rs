@@ -5,7 +5,7 @@
 //! Run with: cargo bench
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use entid::{EntityId, Prefix, UlidEntityId, UuidEntityId};
+use entid::{Prefix, UlidEntityId, UuidEntityId};
 
 // Define test entity types
 struct User;
