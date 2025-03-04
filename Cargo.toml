@@ -1,0 +1,36 @@
+[package]
+name = "entid"
+version = "0.1.0"
+edition = "2021"
+description = "A library for generating and validating type-safe, prefixed entity identifiers based on UUIDs and ULIDs"
+license = "MIT"
+repository = "https://github.com/cosmicmind/entid"
+documentation = "https://docs.rs/entid"
+readme = "README.md"
+keywords = ["id", "identifier", "uuid", "ulid", "entity"]
+categories = ["data-structures"]
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+uuid = { version = "1.0", features = ["v4", "v5", "serde"] }
+ulid = { version = "1.0", features = ["serde"] }
+
+[dev-dependencies]
+serde_json = "1.0"
+criterion = "0.5"
+
+[[bench]]
+name = "entity_id_bench"
+harness = false
+
+[[test]]
+name = "entity_id_tests"
+path = "tests/entity_id_tests.rs"
+
+[[example]]
+name = "basic_usage"
+path = "examples/basic_usage.rs"
+
+[[example]]
+name = "advanced_usage"
+path = "examples/advanced_usage.rs"
