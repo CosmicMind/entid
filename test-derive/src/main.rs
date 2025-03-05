@@ -1,3 +1,5 @@
+/* Copyright © 2025, CosmicMind, Inc. */
+
 use entid::{Prefix, UuidEntityId};
 
 // Define the User struct
