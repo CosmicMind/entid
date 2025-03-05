@@ -127,3 +127,38 @@ fn test_serde() {
     let deserialized: UlidEntityId<Post> = serde_json::from_str(&serialized).unwrap();
     assert_eq!(post_id, deserialized);
 }
+
+#[test]
+fn test_into_trait() {
+    // Test conversion from EntityId to UuidIdentifier
+    let user_id = UuidEntityId::<User>::generate();
+    let uuid_id: UuidIdentifier = user_id.clone().into();
+    assert_eq!(user_id.identifier(), &uuid_id);
+
+    // Test conversion from EntityId to String
+    let id_str: String = user_id.clone().into();
+    assert_eq!(id_str, user_id.as_str());
+
+    // Test conversion from &EntityId to UuidIdentifier
+    let uuid_id_ref: UuidIdentifier = (&user_id).into();
+    assert_eq!(user_id.identifier(), &uuid_id_ref);
+
+    // Test conversion from &EntityId to String
+    let id_str_ref: String = (&user_id).into();
+    assert_eq!(id_str_ref, user_id.as_str());
+
+    // Test conversion from UuidIdentifier to EntityId
+    let uuid = UuidIdentifier::new_v4();
+    let entity_id = EntityId::<User, UuidIdentifier>::from(uuid);
+    assert_eq!(entity_id.identifier(), &uuid);
+
+    // Test conversion from UlidIdentifier to EntityId
+    let ulid = UlidIdentifier::new();
+    let entity_id = EntityId::<User, UlidIdentifier>::from(ulid);
+    assert_eq!(entity_id.identifier(), &ulid);
+
+    // Test conversion from EntityId to UlidIdentifier
+    let post_id = UlidEntityId::<Post>::generate();
+    let ulid_id: UlidIdentifier = post_id.clone().into();
+    assert_eq!(post_id.identifier(), &ulid_id);
+}

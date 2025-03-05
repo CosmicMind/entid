@@ -1,6 +1,6 @@
 [package]
 name = "entid"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "A library for generating and validating type-safe, prefixed entity identifiers based on UUIDs and ULIDs"
 license = "MIT"
@@ -14,10 +14,15 @@ categories = ["data-structures"]
 serde = { version = "1.0", features = ["derive"] }
 uuid = { version = "1.0", features = ["v4", "v5", "serde"] }
 ulid = { version = "1.0", features = ["serde"] }
+entid-derive = { path = "./entid-derive", version = "0.2.0", optional = true }
 
 [dev-dependencies]
 serde_json = "1.0"
 criterion = "0.5"
+
+[features]
+default = ["derive"]
+derive = ["entid-derive"]
 
 [[bench]]
 name = "entity_id_bench"
@@ -34,3 +39,12 @@ path = "examples/basic_usage.rs"
 [[example]]
 name = "advanced_usage"
 path = "examples/advanced_usage.rs"
+
+[[example]]
+name = "derive_macros"
+path = "examples/derive_macros.rs"
+required-features = ["derive"]
+
+[[example]]
+name = "manual_prefix"
+path = "examples/manual_prefix.rs"

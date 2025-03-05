@@ -172,6 +172,55 @@ impl<T: Prefix, I: Identifier> Deref for EntityId<T, I> {
     }
 }
 
+/// **Implement `Into<String>` to convert to string representation**
+impl<T: Prefix, I: Identifier> From<EntityId<T, I>> for String {
+    fn from(entity_id: EntityId<T, I>) -> Self {
+        entity_id.as_str().to_string()
+    }
+}
+
+/// **Implement `Into<String>` for references to convert to string representation**
+impl<T: Prefix, I: Identifier> From<&EntityId<T, I>> for String {
+    fn from(entity_id: &EntityId<T, I>) -> Self {
+        entity_id.as_str().to_string()
+    }
+}
+
+/// **Implement `From<I>` to create an EntityId from an identifier**
+impl<T: Prefix, I: Identifier> From<I> for EntityId<T, I> {
+    fn from(id: I) -> Self {
+        Self::from_identifier(id)
+    }
+}
+
+/// **Implement `Into<UuidIdentifier>` for UUID-based EntityId**
+impl<T: Prefix> From<EntityId<T, UuidIdentifier>> for UuidIdentifier {
+    fn from(entity_id: EntityId<T, UuidIdentifier>) -> Self {
+        entity_id.id
+    }
+}
+
+/// **Implement `Into<UuidIdentifier>` for references to UUID-based EntityId**
+impl<T: Prefix> From<&EntityId<T, UuidIdentifier>> for UuidIdentifier {
+    fn from(entity_id: &EntityId<T, UuidIdentifier>) -> Self {
+        entity_id.id
+    }
+}
+
+/// **Implement `Into<UlidIdentifier>` for ULID-based EntityId**
+impl<T: Prefix> From<EntityId<T, UlidIdentifier>> for UlidIdentifier {
+    fn from(entity_id: EntityId<T, UlidIdentifier>) -> Self {
+        entity_id.id
+    }
+}
+
+/// **Implement `Into<UlidIdentifier>` for references to ULID-based EntityId**
+impl<T: Prefix> From<&EntityId<T, UlidIdentifier>> for UlidIdentifier {
+    fn from(entity_id: &EntityId<T, UlidIdentifier>) -> Self {
+        entity_id.id
+    }
+}
+
 // Type aliases for common use cases
 /// UUID-based entity ID
 pub type UuidEntityId<T> = EntityId<T, UuidIdentifier>;

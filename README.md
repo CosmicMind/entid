@@ -22,7 +22,14 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-entid = "0.1.0"
+entid = "0.2.0"
+```
+
+To use the derive macro for implementing the `Prefix` trait, enable the `derive` feature:
+
+```toml
+[dependencies]
+entid = { version = "0.1.0", features = ["derive"] }
 ```
 
 ## Usage
@@ -67,6 +74,35 @@ fn main() {
     // Type safety prevents mixing different entity IDs
     // This won't compile:
     // let wrong: UuidEntityId<Post> = user_id;
+}
+```
+
+### Using the Derive Macro
+
+With the `derive` feature enabled, you can use the `#[derive(Prefix)]` attribute to implement the `Prefix` trait:
+
+```rust
+use entid::{Prefix, UuidEntityId};
+
+// Use the derive macro to implement the Prefix trait
+#[derive(Debug, Prefix)]
+#[prefix = "user"]
+struct User;
+
+// Use the derive macro with a custom delimiter
+#[derive(Debug, Prefix)]
+#[prefix = "post"]
+#[delimiter = "-"]
+struct Post;
+
+fn main() {
+    // Generate random IDs with UUID
+    let user_id = UuidEntityId::<User>::generate();
+    let post_id = UuidEntityId::<Post>::generate();
+    
+    // Print the IDs
+    println!("User ID: {}", user_id); // e.g., "user_123e4567-e89b-12d3-a456-426614174000"
+    println!("Post ID: {}", post_id); // e.g., "post-123e4567-e89b-12d3-a456-426614174000"
 }
 ```
 

@@ -1,0 +1,16 @@
+[package]
+name = "entid-derive"
+version = "0.2.0"
+edition = "2021"
+description = "Derive macros for the entid crate"
+license = "MIT"
+repository = "https://github.com/cosmicmind/entid"
+documentation = "https://docs.rs/entid-derive"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1.0"
+quote = "1.0"
+syn = { version = "2.0", features = ["full", "extra-traits"] }

@@ -1,6 +1,7 @@
 /* Copyright © 2025, CosmicMind, Inc. */
 
-use std::fmt::Display;
+use std::fmt::{self, Display};
+use std::hash::Hash;
 use std::str::FromStr;
 use std::time::{Duration, UNIX_EPOCH};
 
@@ -15,7 +16,7 @@ use crate::error::IdentifierError;
 /// This trait defines the common interface for different identifier types (UUID, ULID).
 /// It allows the `EntityId` type to be generic over the identifier implementation.
 pub trait Identifier:
-    Sized + Clone + PartialEq + Eq + std::hash::Hash + Display + Serialize + for<'de> Deserialize<'de>
+    Sized + Clone + PartialEq + Eq + Hash + Display + Serialize + for<'de> Deserialize<'de>
 {
     /// Parse a string into an identifier
     fn parse(s: &str) -> Result<Self, IdentifierError>;
@@ -77,7 +78,7 @@ impl Identifier for UuidIdentifier {
 }
 
 impl Display for UuidIdentifier {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }
 }
@@ -90,7 +91,6 @@ impl From<Uuid> for UuidIdentifier {
 
 impl FromStr for UuidIdentifier {
     type Err = IdentifierError;
-
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::parse(s)
     }
@@ -182,7 +182,7 @@ impl Identifier for UlidIdentifier {
 }
 
 impl Display for UlidIdentifier {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }
 }
@@ -195,7 +195,6 @@ impl From<Ulid> for UlidIdentifier {
 
 impl FromStr for UlidIdentifier {
     type Err = IdentifierError;
-
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::parse(s)
     }

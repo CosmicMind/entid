@@ -30,3 +30,7 @@ pub use identifier::{Identifier, UlidIdentifier, UuidIdentifier};
 // Re-export UUID and ULID types for convenience
 pub use ulid::Ulid;
 pub use uuid::Uuid;
+
+// Re-export derive macros when the "derive" feature is enabled
+#[cfg(feature = "derive")]
+pub use entid_derive::Prefix;
