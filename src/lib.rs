@@ -17,6 +17,59 @@
 //! - Shorter string representation (26 characters vs 36 for UUID)
 //!
 //! Choose the identifier type that best suits your application's needs.
+//!
+//! ## Basic Usage
+//!
+//! ```rust
+//! use entid::{Prefix, UuidEntityId};
+//!
+//! struct User;
+//!
+//! impl Prefix for User {
+//!     fn prefix() -> &'static str {
+//!         "user"
+//!     }
+//!
+//!     fn delimiter() -> &'static str {
+//!         "_"
+//!     }
+//! }
+//!
+//! // Generate a new ID with the prefix "user_"
+//! let user_id = UuidEntityId::<User>::generate();
+//! println!("User ID: {}", user_id); // e.g., "user_6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+//! ```
+//!
+//! ## Using the Derive Macro
+//!
+//! With the `derive` feature enabled, you can use the derive macro to implement the `Prefix` trait:
+//!
+//! ```rust
+//! # #[cfg(feature = "derive")]
+//! use entid::{Prefix, UuidEntityId};
+//!
+//! # #[cfg(feature = "derive")]
+//! #[derive(Prefix)]
+//! #[entid(prefix = "user", delimiter = "_")]
+//! struct User;
+//!
+//! # #[cfg(feature = "derive")]
+//! // The delimiter is optional and defaults to "_"
+//! #[derive(Prefix)]
+//! #[entid(prefix = "comment")]
+//! struct Comment;
+//!
+//! # #[cfg(feature = "derive")]
+//! fn main() {
+//!     let user_id = UuidEntityId::<User>::generate();
+//!     println!("User ID: {}", user_id); // e.g., "user_6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+//!     
+//!     let comment_id = UuidEntityId::<Comment>::generate();
+//!     println!("Comment ID: {}", comment_id); // e.g., "comment_6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+//! }
+//! # #[cfg(not(feature = "derive"))]
+//! # fn main() {}
+//! ```
 
 mod entity_id;
 mod error;

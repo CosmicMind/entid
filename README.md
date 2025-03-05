@@ -15,6 +15,7 @@ A Rust library for generating and validating type-safe, prefixed entity identifi
 - **Serde compatible**: Seamless serialization and deserialization
 - **Comprehensive error handling**: Clear error types for all operations
 - **Zero-cost abstractions**: Minimal runtime overhead
+- **Derive macro for implementing the `Prefix` trait**: Optional
 
 ## Installation
 
@@ -22,14 +23,14 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-entid = "0.2.0"
+entid = "0.3.0"
 ```
 
 To use the derive macro for implementing the `Prefix` trait, enable the `derive` feature:
 
 ```toml
 [dependencies]
-entid = { version = "0.2.0", features = ["derive"] }
+entid = { version = "0.3.0", features = ["derive"] }
 ```
 
 ## Usage
@@ -44,6 +45,10 @@ struct User;
 impl Prefix for User {
     fn prefix() -> &'static str {
         "user"
+    }
+
+    fn delimiter() -> &'static str {
+        "_"
     }
 }
 
@@ -65,11 +70,11 @@ fn main() {
     let post_id = EntityId::<Post, UuidIdentifier>::generate();
     
     // Print the IDs
-    println!("User ID: {}", user_id); // e.g., "user_123e4567-e89b-12d3-a456-426614174000"
+    println!("User ID: {}", user_id); // e.g., "user_6ba7b810-9dad-11d1-80b4-00c04fd430c8"
     println!("Post ID: {}", post_id); // e.g., "post-123e4567-e89b-12d3-a456-426614174000"
     
     // Parse existing IDs
-    let parsed_user_id = UuidEntityId::<User>::new("user_123e4567-e89b-12d3-a456-426614174000").unwrap();
+    let parsed_user_id = UuidEntityId::<User>::new("user_6ba7b810-9dad-11d1-80b4-00c04fd430c8").unwrap();
     
     // Type safety prevents mixing different entity IDs
     // This won't compile:
@@ -79,30 +84,33 @@ fn main() {
 
 ### Using the Derive Macro
 
-With the `derive` feature enabled, you can use the `#[derive(Prefix)]` attribute to implement the `Prefix` trait:
+With the `derive` feature enabled, you can use the derive macro to implement the `Prefix` trait:
 
 ```rust
-use entid::{Prefix, UuidEntityId};
+use entid::{Prefix, UuidEntityId, UlidEntityId};
 
-// Use the derive macro to implement the Prefix trait
-#[derive(Debug, Prefix)]
-#[prefix = "user"]
+#[derive(Prefix)]
+#[entid(prefix = "user", delimiter = "_")]
 struct User;
 
-// Use the derive macro with a custom delimiter
-#[derive(Debug, Prefix)]
-#[prefix = "post"]
-#[delimiter = "-"]
+#[derive(Prefix)]
+#[entid(prefix = "post", delimiter = "-")]
 struct Post;
 
+// The delimiter is optional and defaults to "_"
+#[derive(Prefix)]
+#[entid(prefix = "comment")]
+struct Comment;
+
 fn main() {
-    // Generate random IDs with UUID
     let user_id = UuidEntityId::<User>::generate();
-    let post_id = UuidEntityId::<Post>::generate();
+    println!("User ID: {}", user_id); // e.g., "user_6ba7b810-9dad-11d1-80b4-00c04fd430c8"
     
-    // Print the IDs
-    println!("User ID: {}", user_id); // e.g., "user_123e4567-e89b-12d3-a456-426614174000"
-    println!("Post ID: {}", post_id); // e.g., "post-123e4567-e89b-12d3-a456-426614174000"
+    let post_id = UlidEntityId::<Post>::generate();
+    println!("Post ID: {}", post_id); // e.g., "post-01H1VECZJYJ1QV2V0D0000JJDX"
+    
+    let comment_id = UuidEntityId::<Comment>::generate();
+    println!("Comment ID: {}", comment_id); // e.g., "comment_6ba7b810-9dad-11d1-80b4-00c04fd430c8"
 }
 ```
 

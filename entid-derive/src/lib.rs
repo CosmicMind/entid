@@ -2,100 +2,94 @@
 
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput};
+use syn::{parse_macro_input, DeriveInput, Expr, Lit};
+
+/// Attribute for setting the prefix for an entity
+#[proc_macro_attribute]
+pub fn prefix(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    // This is just a marker attribute, so we return the item unchanged
+    item
+}
+
+/// Attribute for setting the delimiter for an entity
+#[proc_macro_attribute]
+pub fn delimiter(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    // This is just a marker attribute, so we return the item unchanged
+    item
+}
 
 /// Derive macro for implementing the `Prefix` trait
 ///
 /// # Attributes
 ///
-/// - `#[prefix = "..."]` - Sets the prefix for the entity (required)
-/// - `#[delimiter = "..."]` - Sets the delimiter for the entity (optional, defaults to "_")
+/// - `#[entid(prefix = "...")]` - Sets the prefix for the entity (required)
+/// - `#[entid(delimiter = "...")]` - Sets the delimiter for the entity (optional, defaults to "_")
 ///
 /// # Example
 ///
-/// ```
+/// ```rust
 /// use entid::Prefix;
 ///
 /// #[derive(Prefix)]
-/// #[prefix = "user"]
+/// #[entid(prefix = "user", delimiter = "_")]
 /// struct User;
 ///
 /// #[derive(Prefix)]
-/// #[prefix = "post"]
-/// #[delimiter = "-"]
+/// #[entid(prefix = "post", delimiter = "-")]
 /// struct Post;
+///
+/// // The delimiter is optional and defaults to "_"
+/// #[derive(Prefix)]
+/// #[entid(prefix = "comment")]
+/// struct Comment;
 /// ```
-#[proc_macro_derive(Prefix, attributes(prefix, delimiter))]
+#[proc_macro_derive(Prefix, attributes(entid))]
 pub fn derive_prefix(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
-
-    // Extract the struct name
     let name = &input.ident;
 
     // Default values
-    let mut prefix = None;
-    let mut delimiter = None;
+    let mut prefix = format!("{}_", name).to_lowercase();
+    let mut delimiter = String::from("_");
 
     // Parse attributes
     for attr in &input.attrs {
-        if attr.path().is_ident("prefix") {
-            match attr.meta {
-                syn::Meta::NameValue(ref meta) => {
-                    if let syn::Expr::Lit(ref expr_lit) = meta.value {
-                        if let syn::Lit::Str(ref lit_str) = expr_lit.lit {
-                            prefix = Some(lit_str.value());
+        if attr.path().is_ident("entid") {
+            attr.parse_nested_meta(|meta| {
+                if meta.path.is_ident("prefix") {
+                    let value = meta.value()?;
+                    let expr: Expr = value.parse()?;
+                    if let Expr::Lit(expr_lit) = expr {
+                        if let Lit::Str(lit_str) = expr_lit.lit {
+                            prefix = lit_str.value();
+                        }
+                    }
+                } else if meta.path.is_ident("delimiter") {
+                    let value = meta.value()?;
+                    let expr: Expr = value.parse()?;
+                    if let Expr::Lit(expr_lit) = expr {
+                        if let Lit::Str(lit_str) = expr_lit.lit {
+                            delimiter = lit_str.value();
                         }
                     }
                 }
-                _ => {}
-            }
-        } else if attr.path().is_ident("delimiter") {
-            match attr.meta {
-                syn::Meta::NameValue(ref meta) => {
-                    if let syn::Expr::Lit(ref expr_lit) = meta.value {
-                        if let syn::Lit::Str(ref lit_str) = expr_lit.lit {
-                            delimiter = Some(lit_str.value());
-                        }
-                    }
-                }
-                _ => {}
-            }
+                Ok(())
+            })
+            .ok();
         }
     }
 
-    // Ensure prefix is provided
-    let prefix = match prefix {
-        Some(prefix) => prefix,
-        None => {
-            return syn::Error::new_spanned(&input.ident, "Missing #[prefix = \"...\"] attribute")
-                .to_compile_error()
-                .into();
-        }
-    };
-
-    // Generate the implementation
-    let impl_prefix = if let Some(delimiter) = delimiter {
-        quote! {
-            impl ::entid::Prefix for #name {
-                fn prefix() -> &'static str {
-                    #prefix
-                }
-
-                fn delimiter() -> &'static str {
-                    #delimiter
-                }
+    let gen = quote! {
+        impl entid::Prefix for #name {
+            fn prefix() -> &'static str {
+                #prefix
             }
-        }
-    } else {
-        quote! {
-            impl ::entid::Prefix for #name {
-                fn prefix() -> &'static str {
-                    #prefix
-                }
+
+            fn delimiter() -> &'static str {
+                #delimiter
             }
         }
     };
 
-    // Return the generated implementation
-    impl_prefix.into()
+    gen.into()
 }
