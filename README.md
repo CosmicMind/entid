@@ -29,7 +29,7 @@ To use the derive macro for implementing the `Prefix` trait, enable the `derive`
 
 ```toml
 [dependencies]
-entid = { version = "0.1.0", features = ["derive"] }
+entid = { version = "0.2.0", features = ["derive"] }
 ```
 
 ## Usage
