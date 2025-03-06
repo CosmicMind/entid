@@ -23,14 +23,114 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-entid = "0.3.0"
+entid = "0.4.0"
 ```
 
 To use the derive macro for implementing the `Prefix` trait, enable the `derive` feature:
 
 ```toml
 [dependencies]
-entid = { version = "0.3.0", features = ["derive"] }
+entid = { version = "0.4.0", features = ["derive"] }
+```
+
+### API Overview
+
+The `EntityId` type provides several methods for working with entity IDs:
+
+```rust
+// Create a new EntityId
+let user_id = UuidEntityId::<User>::generate();
+
+// Get the full ID string with prefix (e.g., "user_123e4567-e89b-12d3-a456-426614174000")
+let full_id = user_id.as_str();
+
+// Get just the identifier part without the prefix (e.g., "123e4567-e89b-12d3-a456-426614174000")
+let raw_id = user_id.id_str();
+
+// Get a reference to the underlying identifier object
+let identifier = user_id.identifier();
+
+// Get the identifier string directly from the identifier
+let id_str = user_id.identifier().as_str();
+
+// Get the prefix for this entity type
+let prefix = UuidEntityId::<User>::prefix(); // "user"
+
+// Get the delimiter for this entity type
+let delimiter = UuidEntityId::<User>::delimiter(); // "_"
+
+// For ULID-based IDs, get the timestamp
+if let Some(timestamp_ms) = ulid_id.timestamp_ms() {
+    println!("ID created at: {} ms since epoch", timestamp_ms);
+}
+```
+
+### Flexible Creation Methods
+
+The library provides multiple ways to create entity IDs:
+
+```rust
+use entid::{EntityId, Identifier, Prefix, UuidEntityId, UlidEntityId, Uuid, Ulid};
+
+// Using the generate method
+let user_id1 = UuidEntityId::<User>::generate();
+
+// Using the new method with flexible string types
+let id_str = "user_123e4567-e89b-12d3-a456-426614174000";
+let user_id2 = UuidEntityId::<User>::new(id_str).unwrap();
+let user_id3 = UuidEntityId::<User>::new(id_str.to_string()).unwrap();
+
+// Using TryFrom trait
+let user_id4 = UuidEntityId::<User>::try_from(id_str).unwrap();
+let user_id5 = UuidEntityId::<User>::try_from(id_str.to_string()).unwrap();
+
+// Using FromStr trait
+let user_id6 = id_str.parse::<UuidEntityId<User>>().unwrap();
+
+// Using convenience methods
+let uuid = Uuid::new_v4();
+let user_id7 = UuidEntityId::<User>::with_uuid(uuid);
+let user_id8 = UuidEntityId::<User>::new_v4();
+let user_id9 = UuidEntityId::<User>::new_v5(&Uuid::NAMESPACE_DNS, "example.com");
+
+// Using the builder pattern
+let user_id10 = UuidEntityId::<User>::builder().build();
+let user_id11 = UuidEntityId::<User>::builder().with_uuid(uuid).build();
+let user_id12 = UuidEntityId::<User>::builder().with_uuid_v4().build();
+let user_id13 = UuidEntityId::<User>::builder().with_uuid_v5(&Uuid::NAMESPACE_DNS, "example.com").build();
+
+// For ULID-based IDs
+let ulid = Ulid::new();
+let post_id1 = UlidEntityId::<Post>::with_ulid(ulid);
+let post_id2 = UlidEntityId::<Post>::with_timestamp(1625097600000); // July 1, 2021
+let post_id3 = UlidEntityId::<Post>::monotonic_from(Some(&post_id2));
+
+// Using the builder pattern for ULID
+let post_id4 = UlidEntityId::<Post>::builder().with_ulid(ulid).build();
+let post_id5 = UlidEntityId::<Post>::builder().with_timestamp(1625097600000).build();
+let post_id6 = UlidEntityId::<Post>::builder().with_monotonic_from(Some(&post_id5)).build();
+```
+
+### Using EntityId in Collections
+
+The `EntityId` type implements `Borrow<str>` and `AsRef<str>`, making it easy to use in collections:
+
+```rust
+use std::collections::{HashMap, HashSet};
+
+// Use EntityId as a key in a HashMap
+let mut user_map = HashMap::new();
+user_map.insert(user_id1, "John Doe");
+
+// Look up by string
+let user = user_map.get(id_str);
+
+// Use EntityId in a HashSet
+let mut user_set = HashSet::new();
+user_set.insert(user_id1);
+
+// Check if a string is in the set
+let contains = user_set.contains(id_str);
 ```
 
 ## Usage

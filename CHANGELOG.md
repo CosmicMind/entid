@@ -5,7 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.0] - 2024-05-15
+## [0.4.0] - 2024-05-15
+
+### Added
+- Added more flexible string handling with `AsRef<str>` for string parameters
+- Added standard Rust traits: `TryFrom`, `FromStr`, `Borrow<str>`, and `AsRef<str>`
+- Added convenience methods: `with_uuid`, `new_v4`, `new_v5`, `with_ulid`, `with_timestamp`, and `monotonic_from`
+- Added builder pattern with `EntityIdBuilder` for more flexible creation of entity IDs
+- Added thread-safe caching for string representations in `Identifier` types
+- Added `id_str()` method to get the raw identifier string without prefix
+
+### Changed
+- Improved API consistency with `with_` prefix for builder methods
+- Updated documentation with examples of the new flexible API
+
+## [0.3.0] - 2024-03-05
 
 ### Changed
 - Updated the derive macro attribute format to use a single `#[entid(...)]` attribute
