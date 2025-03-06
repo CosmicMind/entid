@@ -19,13 +19,13 @@ pub trait Identifier:
     Sized + Clone + PartialEq + Eq + Hash + Display + Serialize + for<'de> Deserialize<'de>
 {
     /// Parse a string into an identifier
-    fn parse(s: &str) -> Result<Self, IdentifierError>;
+    fn parse<S: AsRef<str>>(s: S) -> Result<Self, IdentifierError>;
 
     /// Generate a new random identifier
     fn generate() -> Self;
 
     /// Convert the identifier to a string representation
-    fn as_string(&self) -> String;
+    fn as_str(&self) -> &str;
 
     /// Get the timestamp in milliseconds (if applicable)
     fn timestamp_ms(&self) -> Option<u64>;
@@ -34,6 +34,12 @@ pub trait Identifier:
 /// **UUID-based identifier implementation**
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct UuidIdentifier(Uuid);
+
+// Thread-local cache for string representations
+thread_local! {
+    static UUID_CACHE: std::cell::RefCell<std::collections::HashMap<Uuid, String>> =
+        std::cell::RefCell::new(std::collections::HashMap::new());
+}
 
 impl UuidIdentifier {
     /// Create a new UUID v4 (random)
@@ -58,16 +64,26 @@ impl UuidIdentifier {
 }
 
 impl Identifier for UuidIdentifier {
-    fn parse(s: &str) -> Result<Self, IdentifierError> {
-        Ok(Self(Uuid::parse_str(s).map_err(IdentifierError::from)?))
+    fn parse<S: AsRef<str>>(s: S) -> Result<Self, IdentifierError> {
+        Ok(Self(
+            Uuid::parse_str(s.as_ref()).map_err(IdentifierError::from)?,
+        ))
     }
 
     fn generate() -> Self {
         Self::new_v4()
     }
 
-    fn as_string(&self) -> String {
-        self.0.to_string()
+    fn as_str(&self) -> &str {
+        UUID_CACHE.with(|cache| {
+            let mut cache = cache.borrow_mut();
+            if !cache.contains_key(&self.0) {
+                cache.insert(self.0, self.0.to_string());
+            }
+            // This is safe because we know the string exists in the cache
+            // and the cache lives for the duration of the thread
+            unsafe { std::mem::transmute(cache.get(&self.0).unwrap().as_str()) }
+        })
     }
 
     fn timestamp_ms(&self) -> Option<u64> {
@@ -79,7 +95,7 @@ impl Identifier for UuidIdentifier {
 
 impl Display for UuidIdentifier {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+        write!(f, "{}", self.as_str())
     }
 }
 
@@ -99,6 +115,12 @@ impl FromStr for UuidIdentifier {
 /// **ULID-based identifier implementation**
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct UlidIdentifier(Ulid);
+
+// Thread-local cache for string representations
+thread_local! {
+    static ULID_CACHE: std::cell::RefCell<std::collections::HashMap<Ulid, String>> =
+        std::cell::RefCell::new(std::collections::HashMap::new());
+}
 
 impl Default for UlidIdentifier {
     fn default() -> Self {
@@ -164,16 +186,26 @@ impl UlidIdentifier {
 }
 
 impl Identifier for UlidIdentifier {
-    fn parse(s: &str) -> Result<Self, IdentifierError> {
-        Ok(Self(Ulid::from_string(s).map_err(IdentifierError::from)?))
+    fn parse<S: AsRef<str>>(s: S) -> Result<Self, IdentifierError> {
+        Ok(Self(
+            Ulid::from_string(s.as_ref()).map_err(IdentifierError::from)?,
+        ))
     }
 
     fn generate() -> Self {
         Self::new()
     }
 
-    fn as_string(&self) -> String {
-        self.0.to_string()
+    fn as_str(&self) -> &str {
+        ULID_CACHE.with(|cache| {
+            let mut cache = cache.borrow_mut();
+            if !cache.contains_key(&self.0) {
+                cache.insert(self.0, self.0.to_string());
+            }
+            // This is safe because we know the string exists in the cache
+            // and the cache lives for the duration of the thread
+            unsafe { std::mem::transmute(cache.get(&self.0).unwrap().as_str()) }
+        })
     }
 
     fn timestamp_ms(&self) -> Option<u64> {
@@ -183,7 +215,7 @@ impl Identifier for UlidIdentifier {
 
 impl Display for UlidIdentifier {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+        write!(f, "{}", self.as_str())
     }
 }
 
@@ -207,16 +239,16 @@ mod tests {
     #[test]
     fn test_uuid_identifier() {
         let id = UuidIdentifier::generate();
-        let id_str = id.as_string();
-        let parsed = UuidIdentifier::parse(&id_str).unwrap();
+        let id_str = id.as_str();
+        let parsed = UuidIdentifier::parse(id_str).unwrap();
         assert_eq!(id, parsed);
     }
 
     #[test]
     fn test_ulid_identifier() {
         let id = UlidIdentifier::generate();
-        let id_str = id.as_string();
-        let parsed = UlidIdentifier::parse(&id_str).unwrap();
+        let id_str = id.as_str();
+        let parsed = UlidIdentifier::parse(id_str).unwrap();
         assert_eq!(id, parsed);
 
         // Test timestamp
