@@ -77,9 +77,7 @@ impl Identifier for UuidIdentifier {
     fn as_str(&self) -> &str {
         UUID_CACHE.with(|cache| {
             let mut cache = cache.borrow_mut();
-            if !cache.contains_key(&self.0) {
-                cache.insert(self.0, self.0.to_string());
-            }
+            cache.entry(self.0).or_insert_with(|| self.0.to_string());
             // This is safe because we know the string exists in the cache
             // and the cache lives for the duration of the thread
             unsafe { std::mem::transmute(cache.get(&self.0).unwrap().as_str()) }
@@ -199,9 +197,7 @@ impl Identifier for UlidIdentifier {
     fn as_str(&self) -> &str {
         ULID_CACHE.with(|cache| {
             let mut cache = cache.borrow_mut();
-            if !cache.contains_key(&self.0) {
-                cache.insert(self.0, self.0.to_string());
-            }
+            cache.entry(self.0).or_insert_with(|| self.0.to_string());
             // This is safe because we know the string exists in the cache
             // and the cache lives for the duration of the thread
             unsafe { std::mem::transmute(cache.get(&self.0).unwrap().as_str()) }

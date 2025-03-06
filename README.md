@@ -23,14 +23,14 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-entid = "0.4.0"
+entid = "0.4.1"
 ```
 
 To use the derive macro for implementing the `Prefix` trait, enable the `derive` feature:
 
 ```toml
 [dependencies]
-entid = { version = "0.4.0", features = ["derive"] }
+entid = { version = "0.4.1", features = ["derive"] }
 ```
 
 ### API Overview
