@@ -140,6 +140,8 @@ let contains = user_set.contains(id_str);
 ```rust
 use entid::{EntityId, Prefix, UuidIdentifier, UuidEntityId};
 
+type UserId = UuidEntityId::<User>;
+
 // Define your entity types with custom prefixes
 struct User;
 impl Prefix for User {
@@ -151,6 +153,8 @@ impl Prefix for User {
         "_"
     }
 }
+
+type PostId = EntityId::<Post, UuidIdentifier>;
 
 struct Post;
 impl Prefix for Post {
@@ -166,15 +170,15 @@ impl Prefix for Post {
 
 fn main() {
     // Generate random IDs with UUID
-    let user_id = UuidEntityId::<User>::generate();
-    let post_id = EntityId::<Post, UuidIdentifier>::generate();
+    let user_id = UserId::generate();
+    let post_id = PostId::generate();
     
     // Print the IDs
     println!("User ID: {}", user_id); // e.g., "user_6ba7b810-9dad-11d1-80b4-00c04fd430c8"
     println!("Post ID: {}", post_id); // e.g., "post-123e4567-e89b-12d3-a456-426614174000"
     
     // Parse existing IDs
-    let parsed_user_id = UuidEntityId::<User>::new("user_6ba7b810-9dad-11d1-80b4-00c04fd430c8").unwrap();
+    let parsed_user_id = UserId::new("user_6ba7b810-9dad-11d1-80b4-00c04fd430c8").unwrap();
     
     // Type safety prevents mixing different entity IDs
     // This won't compile:
@@ -189,13 +193,19 @@ With the `derive` feature enabled, you can use the derive macro to implement the
 ```rust
 use entid::{Prefix, UuidEntityId, UlidEntityId};
 
+type UserId = UuidEntityId::<User>;
+
 #[derive(Prefix)]
 #[entid(prefix = "user", delimiter = "_")]
 struct User;
 
+type PostId = UlidEntityId::<Post>;
+
 #[derive(Prefix)]
 #[entid(prefix = "post", delimiter = "-")]
 struct Post;
+
+type CommentId = UuidEntityId::<Comment>;
 
 // The delimiter is optional and defaults to "_"
 #[derive(Prefix)]
@@ -203,13 +213,13 @@ struct Post;
 struct Comment;
 
 fn main() {
-    let user_id = UuidEntityId::<User>::generate();
+    let user_id = UserId::generate();
     println!("User ID: {}", user_id); // e.g., "user_6ba7b810-9dad-11d1-80b4-00c04fd430c8"
     
-    let post_id = UlidEntityId::<Post>::generate();
+    let post_id = PostId::generate();
     println!("Post ID: {}", post_id); // e.g., "post-01H1VECZJYJ1QV2V0D0000JJDX"
     
-    let comment_id = UuidEntityId::<Comment>::generate();
+    let comment_id = CommentId::generate();
     println!("Comment ID: {}", comment_id); // e.g., "comment_6ba7b810-9dad-11d1-80b4-00c04fd430c8"
 }
 ```
@@ -218,6 +228,8 @@ fn main() {
 
 ```rust
 use entid::{EntityId, Prefix, UlidIdentifier, UlidEntityId};
+
+type ProductId = UlidEntityId::<Product>;
 
 struct Product;
 impl Prefix for Product {
@@ -228,11 +240,11 @@ impl Prefix for Product {
 
 fn main() {
     // Generate a ULID-based ID
-    let product_id = UlidEntityId::<Product>::generate();
+    let product_id = ProductId::generate();
     
     // ULIDs are lexicographically sortable by creation time
-    let product_ids: Vec<UlidEntityId<Product>> = (0..10)
-        .map(|_| UlidEntityId::<Product>::generate())
+    let product_ids: Vec<UProductId> = (0..10)
+        .map(|_| ProductId::generate())
         .collect();
     
     // Sorting will order by creation time
@@ -251,6 +263,8 @@ fn main() {
 ```rust
 use entid::{EntityId, Prefix, UuidIdentifier, Uuid};
 
+type ApiKeyToken = EntityId::<ApiKey, UuidIdentifier>;
+
 struct ApiKey;
 impl Prefix for ApiKey {
     fn prefix() -> &'static str {
@@ -266,11 +280,11 @@ fn main() {
     let uuid_id = UuidIdentifier::new_v5(&namespace, "user@example.com");
     
     // Create an entity ID from the identifier
-    let api_key = EntityId::<ApiKey, UuidIdentifier>::from_identifier(uuid_id);
+    let api_key = ApiKeyToken::from_identifier(uuid_id);
     
     // Same input produces the same ID
     let uuid_id2 = UuidIdentifier::new_v5(&namespace, "user@example.com");
-    let api_key2 = EntityId::<ApiKey, UuidIdentifier>::from_identifier(uuid_id2);
+    let api_key2 = ApiKeyToken::from_identifier(uuid_id2);
     
     assert_eq!(api_key, api_key2);
 }
@@ -281,6 +295,8 @@ fn main() {
 ```rust
 use entid::{EntityId, EntityIdError, IdentifierError, Prefix, UuidIdentifier};
 
+type UserId = <User, UuidIdentifier>;
+
 struct User;
 impl Prefix for User {
     fn prefix() -> &'static str {
@@ -290,7 +306,7 @@ impl Prefix for User {
 
 fn parse_id(input: &str) -> Result<(), Box<dyn std::error::Error>> {
     // Parse an entity ID string
-    match EntityId::<User, UuidIdentifier>::new(input) {
+    match EntityId::UserId::new(input) {
         Ok(id) => {
             println!("Successfully parsed ID: {}", id);
             Ok(())
@@ -327,16 +343,18 @@ impl Prefix for Order {
     }
 }
 
+type OrderRecordId = EntityId<Order, UlidIdentifier>;
+
 #[derive(Serialize, Deserialize)]
 struct OrderRecord {
-    id: EntityId<Order, UlidIdentifier>,
+    id: OrderRecordId,
     customer_name: String,
     amount: f64,
 }
 
 fn main() {
     let order = OrderRecord {
-        id: EntityId::<Order, UlidIdentifier>::generate(),
+        id: OrderRecordId::generate(),
         customer_name: "John Doe".to_string(),
         amount: 123.45,
     };
@@ -356,6 +374,8 @@ fn main() {
 ```rust
 use entid::{EntityId, Prefix, UuidIdentifier};
 
+type CutsomerId = EntityId<Customer, UuidIdentifier>;
+
 struct Customer;
 impl Prefix for Customer {
     fn prefix() -> &'static str {
@@ -364,7 +384,7 @@ impl Prefix for Customer {
 }
 
 // Example with a hypothetical database library
-fn store_in_db(customer_id: &EntityId<Customer, UuidIdentifier>, name: &str) {
+fn store_in_db(customer_id: &CutsomerId, name: &str) {
     // The ID will be stored as a string like "cust_123e4567-e89b-12d3-a456-426614174000"
     let id_str = customer_id.as_str();
     
@@ -374,9 +394,9 @@ fn store_in_db(customer_id: &EntityId<Customer, UuidIdentifier>, name: &str) {
     // Database operations...
 }
 
-fn retrieve_from_db(id_str: &str) -> Result<EntityId<Customer, UuidIdentifier>, entid::EntityIdError> {
+fn retrieve_from_db(id_str: &str) -> Result<CutsomerId, entid::EntityIdError> {
     // Parse the ID string back into an EntityId
-    EntityId::<Customer, UuidIdentifier>::new(id_str)
+    CutsomerId::new(id_str)
 }
 ```
 
@@ -387,6 +407,8 @@ fn retrieve_from_db(id_str: &str) -> Result<EntityId<Customer, UuidIdentifier>, 
 ```rust
 use entid::{EntityId, Prefix, UlidIdentifier};
 
+type TaskId = EntityId::<Task, UlidIdentifier>;
+
 struct Task;
 impl Prefix for Task {
     fn prefix() -> &'static str {
@@ -396,11 +418,11 @@ impl Prefix for Task {
 
 fn main() {
     // Create a ULID-based entity ID
-    let task1 = EntityId::<Task, UlidIdentifier>::generate();
+    let task1 = TaskId::generate();
     
     // Create a monotonic ULID (ensures ordering even within the same millisecond)
     let ulid2 = UlidIdentifier::monotonic_from(Some(task1.identifier()));
-    let task2 = EntityId::<Task, UlidIdentifier>::from_identifier(ulid2);
+    let task2 = TaskId::from_identifier(ulid2);
     
     // task2 is guaranteed to sort after task1
     assert!(task2 > task1);
@@ -412,6 +434,8 @@ fn main() {
 ```rust
 use entid::{EntityId, Prefix, UuidIdentifier};
 
+type ApiKeyToken = EntityId<ApiKey, UuidIdentifier>;
+
 struct ApiKey;
 impl Prefix for ApiKey {
     fn prefix() -> &'static str {
@@ -420,7 +444,7 @@ impl Prefix for ApiKey {
 }
 
 // Extend EntityId with custom validation logic
-impl EntityId<ApiKey, UuidIdentifier> {
+impl ApiKeyToken {
     pub fn is_valid_for_environment(&self, env: &str) -> bool {
         // Custom validation logic based on the UUID version
         match env {
