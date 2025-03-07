@@ -38,8 +38,10 @@ entid = { version = "0.4.1", features = ["derive"] }
 The `EntityId` type provides several methods for working with entity IDs:
 
 ```rust
+type UserId = UuidEntityId::<User>;
+
 // Create a new EntityId
-let user_id = UuidEntityId::<User>::generate();
+let user_id = UserId::generate();
 
 // Get the full ID string with prefix (e.g., "user_123e4567-e89b-12d3-a456-426614174000")
 let full_id = user_id.as_str();
@@ -54,10 +56,10 @@ let identifier = user_id.identifier();
 let id_str = user_id.identifier().as_str();
 
 // Get the prefix for this entity type
-let prefix = UuidEntityId::<User>::prefix(); // "user"
+let prefix = UserId::prefix(); // "user"
 
 // Get the delimiter for this entity type
-let delimiter = UuidEntityId::<User>::delimiter(); // "_"
+let delimiter = UserId::delimiter(); // "_"
 
 // For ULID-based IDs, get the timestamp
 if let Some(timestamp_ms) = ulid_id.timestamp_ms() {
@@ -72,43 +74,47 @@ The library provides multiple ways to create entity IDs:
 ```rust
 use entid::{EntityId, Identifier, Prefix, UuidEntityId, UlidEntityId, Uuid, Ulid};
 
+type UserId = UuidEntityId::<User>;
+
 // Using the generate method
-let user_id1 = UuidEntityId::<User>::generate();
+let user_id1 = UserId::generate();
 
 // Using the new method with flexible string types
 let id_str = "user_123e4567-e89b-12d3-a456-426614174000";
-let user_id2 = UuidEntityId::<User>::new(id_str).unwrap();
-let user_id3 = UuidEntityId::<User>::new(id_str.to_string()).unwrap();
+let user_id2 = UserId::new(id_str).unwrap();
+let user_id3 = UserId::new(id_str.to_string()).unwrap();
 
 // Using TryFrom trait
-let user_id4 = UuidEntityId::<User>::try_from(id_str).unwrap();
-let user_id5 = UuidEntityId::<User>::try_from(id_str.to_string()).unwrap();
+let user_id4 = UserId::try_from(id_str).unwrap();
+let user_id5 = UserId::try_from(id_str.to_string()).unwrap();
 
 // Using FromStr trait
 let user_id6 = id_str.parse::<UuidEntityId<User>>().unwrap();
 
 // Using convenience methods
 let uuid = Uuid::new_v4();
-let user_id7 = UuidEntityId::<User>::with_uuid(uuid);
-let user_id8 = UuidEntityId::<User>::new_v4();
-let user_id9 = UuidEntityId::<User>::new_v5(&Uuid::NAMESPACE_DNS, "example.com");
+let user_id7 = UserId::with_uuid(uuid);
+let user_id8 = UserId::new_v4();
+let user_id9 = UserId::new_v5(&Uuid::NAMESPACE_DNS, "example.com");
 
 // Using the builder pattern
-let user_id10 = UuidEntityId::<User>::builder().build();
-let user_id11 = UuidEntityId::<User>::builder().with_uuid(uuid).build();
-let user_id12 = UuidEntityId::<User>::builder().with_uuid_v4().build();
-let user_id13 = UuidEntityId::<User>::builder().with_uuid_v5(&Uuid::NAMESPACE_DNS, "example.com").build();
+let user_id10 = UserId::builder().build();
+let user_id11 = UserId::builder().with_uuid(uuid).build();
+let user_id12 = UserId::builder().with_uuid_v4().build();
+let user_id13 = UserId::builder().with_uuid_v5(&Uuid::NAMESPACE_DNS, "example.com").build();
 
 // For ULID-based IDs
+type PostId = UlidEntityId::<Post>;
+
 let ulid = Ulid::new();
-let post_id1 = UlidEntityId::<Post>::with_ulid(ulid);
-let post_id2 = UlidEntityId::<Post>::with_timestamp(1625097600000); // July 1, 2021
-let post_id3 = UlidEntityId::<Post>::monotonic_from(Some(&post_id2));
+let post_id1 = PostId::with_ulid(ulid);
+let post_id2 = PostId::with_timestamp(1625097600000); // July 1, 2021
+let post_id3 = PostId::monotonic_from(Some(&post_id2));
 
 // Using the builder pattern for ULID
-let post_id4 = UlidEntityId::<Post>::builder().with_ulid(ulid).build();
-let post_id5 = UlidEntityId::<Post>::builder().with_timestamp(1625097600000).build();
-let post_id6 = UlidEntityId::<Post>::builder().with_monotonic_from(Some(&post_id5)).build();
+let post_id4 = PostId::builder().with_ulid(ulid).build();
+let post_id5 = PostId::builder().with_timestamp(1625097600000).build();
+let post_id6 = PostId::builder().with_monotonic_from(Some(&post_id5)).build();
 ```
 
 ### Using EntityId in Collections
