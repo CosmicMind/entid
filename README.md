@@ -380,7 +380,7 @@ fn main() {
 ```rust
 use entid::{EntityId, Prefix, UuidIdentifier};
 
-type CutsomerId = EntityId<Customer, UuidIdentifier>;
+type CustomerId = EntityId<Customer, UuidIdentifier>;
 
 struct Customer;
 impl Prefix for Customer {
@@ -390,7 +390,7 @@ impl Prefix for Customer {
 }
 
 // Example with a hypothetical database library
-fn store_in_db(customer_id: &CutsomerId, name: &str) {
+fn store_in_db(customer_id: &CustomerId, name: &str) {
     // The ID will be stored as a string like "cust_123e4567-e89b-12d3-a456-426614174000"
     let id_str = customer_id.as_str();
     
@@ -400,9 +400,9 @@ fn store_in_db(customer_id: &CutsomerId, name: &str) {
     // Database operations...
 }
 
-fn retrieve_from_db(id_str: &str) -> Result<CutsomerId, entid::EntityIdError> {
+fn retrieve_from_db(id_str: &str) -> Result<CustomerId, entid::EntityIdError> {
     // Parse the ID string back into an EntityId
-    CutsomerId::new(id_str)
+    CustomerId::new(id_str)
 }
 ```
 
