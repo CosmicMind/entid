@@ -1,12 +1,12 @@
 /* Copyright © 2025, CosmicMind, Inc. */
 
-use std::fmt::{self, Display};
-use std::hash::Hash;
-use std::str::FromStr;
-use std::time::{Duration, UNIX_EPOCH};
-use std::mem::transmute;
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::fmt::{self, Display};
+use std::hash::Hash;
+use std::mem::transmute;
+use std::str::FromStr;
+use std::time::{Duration, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
 use ulid::Ulid;
@@ -203,9 +203,7 @@ impl Identifier for UlidIdentifier {
             cache.entry(self.0).or_insert_with(|| self.0.to_string());
             // This is safe because we know the string exists in the cache
             // and the cache lives for the duration of the thread
-            unsafe {
-                transmute(cache.get(&self.0).unwrap().as_str())
-            }
+            unsafe { transmute(cache.get(&self.0).unwrap().as_str()) }
         })
     }
 
