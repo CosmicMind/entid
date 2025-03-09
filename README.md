@@ -23,14 +23,14 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-entid = "0.4.1"
+entid = "0.4.2"
 ```
 
 To use the derive macro for implementing the `Prefix` trait, enable the `derive` feature:
 
 ```toml
 [dependencies]
-entid = { version = "0.4.1", features = ["derive"] }
+entid = { version = "0.4.2", features = ["derive"] }
 ```
 
 ### API Overview
@@ -79,29 +79,36 @@ type UserId = UuidEntityId::<User>;
 // Using the generate method
 let user_id1 = UserId::generate();
 
-// Using the new method with flexible string types
+// Using the new method with flexible string types (with prefix)
 let id_str = "user_123e4567-e89b-12d3-a456-426614174000";
 let user_id2 = UserId::new(id_str).unwrap();
 let user_id3 = UserId::new(id_str.to_string()).unwrap();
 
+// Using from_raw_str to parse a raw identifier string (without prefix)
+let raw_uuid = "123e4567-e89b-12d3-a456-426614174000";
+let user_id4 = UserId::from_raw_str(raw_uuid).unwrap();
+
+// Using parse_raw_str with custom error handling
+let user_id5 = UserId::parse_raw_str(raw_uuid, |e| format!("Invalid UUID: {}", e)).unwrap();
+
 // Using TryFrom trait
-let user_id4 = UserId::try_from(id_str).unwrap();
-let user_id5 = UserId::try_from(id_str.to_string()).unwrap();
+let user_id6 = UserId::try_from(id_str).unwrap();
+let user_id7 = UserId::try_from(id_str.to_string()).unwrap();
 
 // Using FromStr trait
-let user_id6 = id_str.parse::<UuidEntityId<User>>().unwrap();
+let user_id8 = id_str.parse::<UuidEntityId<User>>().unwrap();
 
 // Using convenience methods
 let uuid = Uuid::new_v4();
-let user_id7 = UserId::with_uuid(uuid);
-let user_id8 = UserId::new_v4();
-let user_id9 = UserId::new_v5(&Uuid::NAMESPACE_DNS, "example.com");
+let user_id9 = UserId::with_uuid(uuid);
+let user_id10 = UserId::new_v4();
+let user_id11 = UserId::new_v5(&Uuid::NAMESPACE_DNS, "example.com");
 
 // Using the builder pattern
-let user_id10 = UserId::builder().build();
-let user_id11 = UserId::builder().with_uuid(uuid).build();
-let user_id12 = UserId::builder().with_uuid_v4().build();
-let user_id13 = UserId::builder().with_uuid_v5(&Uuid::NAMESPACE_DNS, "example.com").build();
+let user_id12 = UserId::builder().build();
+let user_id13 = UserId::builder().with_uuid(uuid).build();
+let user_id14 = UserId::builder().with_uuid_v4().build();
+let user_id15 = UserId::builder().with_uuid_v5(&Uuid::NAMESPACE_DNS, "example.com").build();
 
 // For ULID-based IDs
 type PostId = UlidEntityId::<Post>;
@@ -445,7 +452,7 @@ type ApiKeyToken = EntityId<ApiKey, UuidIdentifier>;
 struct ApiKey;
 impl Prefix for ApiKey {
     fn prefix() -> &'static str {
-        "key"
+        "token"
     }
 }
 
@@ -458,6 +465,118 @@ impl ApiKeyToken {
             _ => true,
         }
     }
+}
+```
+
+## Choosing Between UUID and ULID
+
+### UUID Advantages
+- Industry standard with wide adoption
+- Multiple versions for different use cases (v1, v3, v4, v5)
+- Well-supported in databases and other systems
+
+### ULID Advantages
+- Lexicographically sortable (sorts by creation time)
+- URL-safe (no special characters)
+- Shorter string representation (26 characters vs 36 for UUID)
+- Built-in timestamp component
+
+## Performance Considerations
+
+- String representations are cached using `OnceLock` for thread-safe lazy initialization
+- The `EntityId` type implements `Hash`, `PartialEq`, and `Eq` for efficient use in collections
+- Memory usage is optimized by using `PhantomData` for type parameters
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+### Simplified API for Web Applications
+
+The new parsing methods make it easier to work with IDs in web applications:
+
+```rust
+use entid::{Prefix, UuidEntityId};
+use axum::{extract::Path, http::StatusCode, response::IntoResponse, Json};
+use serde::{Deserialize, Serialize};
+
+#[derive(Prefix)]
+#[entid(prefix = "user")]
+struct User;
+
+type UserId = UuidEntityId<User>;
+
+// Extract and validate a user ID from a URL path parameter
+async fn get_user(Path(user_id_str): Path<String>) -> impl IntoResponse {
+    // Parse the raw UUID string (without prefix) directly
+    let user_id = match UserId::from_raw_str(&user_id_str) {
+        Ok(id) => id,
+        Err(_) => return (StatusCode::BAD_REQUEST, "Invalid user ID").into_response(),
+    };
+
+    // Fetch user from database using the ID...
+    let user = fetch_user(user_id).await?;
+    
+    (StatusCode::OK, Json(user)).into_response()
+}
+
+// Parse an ID with custom error handling for better API responses
+async fn update_user(
+    Path(user_id_str): Path<String>,
+    Json(payload): Json<UserUpdatePayload>,
+) -> impl IntoResponse {
+    // Use parse_raw_str with custom error handling
+    let user_id = match UserId::parse_raw_str(user_id_str, |e| {
+        (StatusCode::BAD_REQUEST, format!("Invalid user ID: {}", e))
+    }) {
+        Ok(id) => id,
+        Err(err) => return err.into_response(),
+    };
+
+    // Update user in database...
+    update_user_in_db(user_id, payload).await?;
+    
+    StatusCode::NO_CONTENT.into_response()
+}
+```
+
+### Working with External Systems
+
+When integrating with external systems, you often need to convert between different ID formats:
+
+```rust
+use entid::{Prefix, UuidEntityId, UlidEntityId};
+
+#[derive(Prefix)]
+#[entid(prefix = "user")]
+struct User;
+
+#[derive(Prefix)]
+#[entid(prefix = "order")]
+struct Order;
+
+type UserId = UuidEntityId<User>;
+type OrderId = UlidEntityId<Order>;
+
+// Convert from an external system's user ID to our internal format
+fn import_external_user(external_id: &str) -> Result<UserId, String> {
+    // The external system uses raw UUIDs without prefixes
+    UserId::from_raw_str(external_id)
+        .map_err(|e| format!("Failed to import user: {}", e))
+}
+
+// Export our internal ID to a format the external system expects
+fn export_order_to_external_system(order_id: &OrderId) -> String {
+    // The external system needs just the ULID part without our prefix
+    order_id.id_str().to_string()
+}
+
+// Convert a batch of IDs from an external system
+fn import_user_batch(external_ids: &[String]) -> Vec<UserId> {
+    external_ids
+        .iter()
+        .filter_map(|id| UserId::from_raw_str(id).ok())
+        .collect()
 }
 ```
 

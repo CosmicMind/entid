@@ -4,6 +4,9 @@ use std::fmt::{self, Display};
 use std::hash::Hash;
 use std::str::FromStr;
 use std::time::{Duration, UNIX_EPOCH};
+use std::mem::transmute;
+use std::cell::RefCell;
+use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 use ulid::Ulid;
@@ -37,8 +40,8 @@ pub struct UuidIdentifier(Uuid);
 
 // Thread-local cache for string representations
 thread_local! {
-    static UUID_CACHE: std::cell::RefCell<std::collections::HashMap<Uuid, String>> =
-        std::cell::RefCell::new(std::collections::HashMap::new());
+    static UUID_CACHE: RefCell<HashMap<Uuid, String>> =
+        RefCell::new(HashMap::new());
 }
 
 impl UuidIdentifier {
@@ -80,7 +83,7 @@ impl Identifier for UuidIdentifier {
             cache.entry(self.0).or_insert_with(|| self.0.to_string());
             // This is safe because we know the string exists in the cache
             // and the cache lives for the duration of the thread
-            unsafe { std::mem::transmute(cache.get(&self.0).unwrap().as_str()) }
+            unsafe { transmute(cache.get(&self.0).unwrap().as_str()) }
         })
     }
 
@@ -116,8 +119,8 @@ pub struct UlidIdentifier(Ulid);
 
 // Thread-local cache for string representations
 thread_local! {
-    static ULID_CACHE: std::cell::RefCell<std::collections::HashMap<Ulid, String>> =
-        std::cell::RefCell::new(std::collections::HashMap::new());
+    static ULID_CACHE: RefCell<HashMap<Ulid, String>> =
+        RefCell::new(HashMap::new());
 }
 
 impl Default for UlidIdentifier {
@@ -200,7 +203,9 @@ impl Identifier for UlidIdentifier {
             cache.entry(self.0).or_insert_with(|| self.0.to_string());
             // This is safe because we know the string exists in the cache
             // and the cache lives for the duration of the thread
-            unsafe { std::mem::transmute(cache.get(&self.0).unwrap().as_str()) }
+            unsafe {
+                transmute(cache.get(&self.0).unwrap().as_str())
+            }
         })
     }
 
@@ -211,7 +216,7 @@ impl Identifier for UlidIdentifier {
 
 impl Display for UlidIdentifier {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.as_str())
+        f.write_str(self.as_str())
     }
 }
 

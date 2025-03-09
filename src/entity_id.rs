@@ -12,7 +12,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use ulid::Ulid;
 use uuid::Uuid;
 
-use crate::error::EntityIdError;
+use crate::error::{EntityIdError, IdentifierError};
 use crate::identifier::{Identifier, UlidIdentifier, UuidIdentifier};
 
 /// **Trait for entity-specific prefixes**
@@ -126,6 +126,56 @@ impl<T: Prefix, I: Identifier> EntityId<T, I> {
     /// **Create a builder for this entity type**
     pub fn builder() -> EntityIdBuilder<T, I> {
         EntityIdBuilder::new()
+    }
+
+    /// **Implement `TryFrom<&str>` for the raw identifier string (without prefix)**
+    ///
+    /// This method parses a raw identifier string (UUID or ULID) without the prefix
+    /// and creates an EntityId with the appropriate prefix.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use entid::{Prefix, UuidEntityId};
+    ///
+    /// #[derive(Prefix)]
+    /// #[entid(prefix = "user")]
+    /// struct User;
+    ///
+    /// // Parse a raw UUID string (without the "user_" prefix)
+    /// let uuid_str = "123e4567-e89b-12d3-a456-426614174000";
+    /// let user_id = UuidEntityId::<User>::from_raw_str(uuid_str).unwrap();
+    /// assert_eq!(user_id.as_str(), "user_123e4567-e89b-12d3-a456-426614174000");
+    /// ```
+    pub fn from_raw_str<S: AsRef<str>>(s: S) -> Result<Self, EntityIdError> {
+        let id = I::parse(s).map_err(|_| EntityIdError::InvalidIdentifier)?;
+        Ok(Self::from_identifier(id))
+    }
+
+    /// **Parse a raw identifier string (without prefix) into an EntityId, with custom error handling**
+    ///
+    /// This method is similar to `from_raw_str`, but allows mapping the error to a custom type.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use entid::{Prefix, UuidEntityId};
+    ///
+    /// #[derive(Prefix)]
+    /// #[entid(prefix = "user")]
+    /// struct User;
+    ///
+    /// // Parse a raw UUID string with custom error handling
+    /// let uuid_str = "123e4567-e89b-12d3-a456-426614174000";
+    /// let user_id = UuidEntityId::<User>::parse_raw_str(uuid_str, |e| format!("Invalid UUID: {}", e)).unwrap();
+    /// ```
+    pub fn parse_raw_str<S, E, F>(s: S, error_mapper: F) -> Result<Self, E>
+    where
+        S: AsRef<str>,
+        F: FnOnce(IdentifierError) -> E,
+    {
+        let id = I::parse(s).map_err(error_mapper)?;
+        Ok(Self::from_identifier(id))
     }
 }
 
