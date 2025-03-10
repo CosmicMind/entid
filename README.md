@@ -23,14 +23,14 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-entid = "0.4.2"
+entid = "0.4.3"
 ```
 
 To use the derive macro for implementing the `Prefix` trait, enable the `derive` feature:
 
 ```toml
 [dependencies]
-entid = { version = "0.4.2", features = ["derive"] }
+entid = { version = "0.4.3", features = ["derive"] }
 ```
 
 ### API Overview
@@ -96,7 +96,7 @@ let user_id6 = UserId::try_from(id_str).unwrap();
 let user_id7 = UserId::try_from(id_str.to_string()).unwrap();
 
 // Using FromStr trait
-let user_id8 = id_str.parse::<UuidEntityId<User>>().unwrap();
+let user_id8 = id_str.parse::<UserId>().unwrap();
 
 // Using convenience methods
 let uuid = Uuid::new_v4();
@@ -303,12 +303,82 @@ fn main() {
 }
 ```
 
+### Enhanced Error Handling
+
+The library provides detailed error information and convenient methods for error handling:
+
+```rust
+use entid::{EntityId, EntityIdError, IdentifierError, Prefix, UuidEntityId};
+use std::error::Error;
+
+#[derive(Prefix)]
+#[entid(prefix = "user")]
+struct User;
+
+type UserId = UuidEntityId<User>;
+
+// Convert errors to strings
+fn parse_user_id(input: &str) -> Result<UserId, String> {
+    UserId::new(input).map_err(|e| e.to_string()) // Use Display trait
+}
+
+// Get the specific error type
+fn handle_id_error(input: &str) -> Result<UserId, String> {
+    match UserId::from_raw_str(input) {
+        Ok(id) => Ok(id),
+        Err(EntityIdError::InvalidIdentifier) => {
+            // Try to parse as UUID to get more specific error
+            match uuid::Uuid::parse_str(input) {
+                Err(uuid_err) => Err(format!("Invalid UUID: {}", uuid_err)),
+                _ => Err("Unknown identifier error".to_string()),
+            }
+        },
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+// Access the underlying error directly
+fn process_with_detailed_errors<S: AsRef<str>>(input: S) -> Result<UserId, String> {
+    UserId::from_raw_str(input.as_ref()).map_err(|e| {
+        match e {
+            EntityIdError::InvalidIdentifier => {
+                // Try to parse directly to get the specific error
+                match uuid::Uuid::parse_str(input.as_ref()) {
+                    Err(uuid_err) => {
+                        let id_err = IdentifierError::Uuid(uuid_err);
+                        
+                        // Get the underlying UUID error
+                        if let Some(uuid_err) = id_err.uuid_error() {
+                            format!("UUID parsing failed: {}", uuid_err)
+                        } else {
+                            // Get the error message directly
+                            format!("UUID parsing failed: {}", id_err.error_message())
+                        }
+                    },
+                    _ => "Unknown identifier error".to_string(),
+                }
+            },
+            _ => e.to_string(),
+        }
+    })
+}
+
+// Use the standard Error trait methods
+fn log_error_details(err: &EntityIdError) {
+    println!("Error: {}", err);
+    
+    if let Some(source) = err.source() {
+        println!("Caused by: {}", source);
+    }
+}
+```
+
 ### Error Handling
 
 ```rust
 use entid::{EntityId, EntityIdError, IdentifierError, Prefix, UuidIdentifier};
 
-type UserId = <User, UuidIdentifier>;
+type UserId = EntityId<User, UuidIdentifier>;
 
 struct User;
 impl Prefix for User {
@@ -319,7 +389,7 @@ impl Prefix for User {
 
 fn parse_id(input: &str) -> Result<(), Box<dyn std::error::Error>> {
     // Parse an entity ID string
-    match EntityId::UserId::new(input) {
+    match UserId::new(input) {
         Ok(id) => {
             println!("Successfully parsed ID: {}", id);
             Ok(())
@@ -356,18 +426,18 @@ impl Prefix for Order {
     }
 }
 
-type OrderRecordId = EntityId<Order, UlidIdentifier>;
+type OrderId = EntityId<Order, UlidIdentifier>;
 
 #[derive(Serialize, Deserialize)]
 struct OrderRecord {
-    id: OrderRecordId,
+    id: OrderId,
     customer_name: String,
     amount: f64,
 }
 
 fn main() {
     let order = OrderRecord {
-        id: OrderRecordId::generate(),
+        id: OrderId::generate(),
         customer_name: "John Doe".to_string(),
         amount: 123.45,
     };
@@ -382,40 +452,9 @@ fn main() {
 }
 ```
 
-### Using with Databases
+### Enhanced Error Handling with String Conversions
 
-```rust
-use entid::{EntityId, Prefix, UuidIdentifier};
-
-type CustomerId = EntityId<Customer, UuidIdentifier>;
-
-struct Customer;
-impl Prefix for Customer {
-    fn prefix() -> &'static str {
-        "cust"
-    }
-}
-
-// Example with a hypothetical database library
-fn store_in_db(customer_id: &CustomerId, name: &str) {
-    // The ID will be stored as a string like "cust_123e4567-e89b-12d3-a456-426614174000"
-    let id_str = customer_id.as_str();
-    
-    // You can also access the raw identifier if needed
-    let uuid = customer_id.identifier().uuid();
-    
-    // Database operations...
-}
-
-fn retrieve_from_db(id_str: &str) -> Result<CustomerId, entid::EntityIdError> {
-    // Parse the ID string back into an EntityId
-    CustomerId::new(id_str)
-}
-```
-
-## Advanced Usage
-
-### Creating Monotonic ULIDs
+The library provides convenient error handling with string conversions through `AsRef<str>` and `Into<String>` implementations:
 
 ```rust
 use entid::{EntityId, Prefix, UlidIdentifier};
@@ -468,37 +507,12 @@ impl ApiKeyToken {
 }
 ```
 
-## Choosing Between UUID and ULID
+### Additional Conversion Methods
 
-### UUID Advantages
-- Industry standard with wide adoption
-- Multiple versions for different use cases (v1, v3, v4, v5)
-- Well-supported in databases and other systems
-
-### ULID Advantages
-- Lexicographically sortable (sorts by creation time)
-- URL-safe (no special characters)
-- Shorter string representation (26 characters vs 36 for UUID)
-- Built-in timestamp component
-
-## Performance Considerations
-
-- String representations are cached using `OnceLock` for thread-safe lazy initialization
-- The `EntityId` type implements `Hash`, `PartialEq`, and `Eq` for efficient use in collections
-- Memory usage is optimized by using `PhantomData` for type parameters
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-### Simplified API for Web Applications
-
-The new parsing methods make it easier to work with IDs in web applications:
+The library provides additional methods for converting between different representations:
 
 ```rust
-use entid::{Prefix, UuidEntityId};
-use axum::{extract::Path, http::StatusCode, response::IntoResponse, Json};
-use serde::{Deserialize, Serialize};
+use entid::{Prefix, UuidEntityId, UuidIdentifier};
 
 #[derive(Prefix)]
 #[entid(prefix = "user")]
@@ -506,78 +520,24 @@ struct User;
 
 type UserId = UuidEntityId<User>;
 
-// Extract and validate a user ID from a URL path parameter
-async fn get_user(Path(user_id_str): Path<String>) -> impl IntoResponse {
-    // Parse the raw UUID string (without prefix) directly
-    let user_id = match UserId::from_raw_str(&user_id_str) {
-        Ok(id) => id,
-        Err(_) => return (StatusCode::BAD_REQUEST, "Invalid user ID").into_response(),
-    };
+// Generate a new ID
+let user_id = UserId::generate();
 
-    // Fetch user from database using the ID...
-    let user = fetch_user(user_id).await?;
-    
-    (StatusCode::OK, Json(user)).into_response()
+// Convert to raw identifier string (without prefix)
+let raw_string = user_id.to_raw_string();
+assert_eq!(raw_string, user_id.id_str().to_string());
+
+// Convert to the underlying identifier type
+let uuid_identifier: UuidIdentifier = user_id.to_identifier();
+assert_eq!(uuid_identifier, *user_id.identifier());
+
+// Use with functions that accept string types
+fn process_string(s: impl AsRef<str>) {
+    println!("Processing: {}", s.as_ref());
 }
 
-// Parse an ID with custom error handling for better API responses
-async fn update_user(
-    Path(user_id_str): Path<String>,
-    Json(payload): Json<UserUpdatePayload>,
-) -> impl IntoResponse {
-    // Use parse_raw_str with custom error handling
-    let user_id = match UserId::parse_raw_str(user_id_str, |e| {
-        (StatusCode::BAD_REQUEST, format!("Invalid user ID: {}", e))
-    }) {
-        Ok(id) => id,
-        Err(err) => return err.into_response(),
-    };
-
-    // Update user in database...
-    update_user_in_db(user_id, payload).await?;
-    
-    StatusCode::NO_CONTENT.into_response()
-}
-```
-
-### Working with External Systems
-
-When integrating with external systems, you often need to convert between different ID formats:
-
-```rust
-use entid::{Prefix, UuidEntityId, UlidEntityId};
-
-#[derive(Prefix)]
-#[entid(prefix = "user")]
-struct User;
-
-#[derive(Prefix)]
-#[entid(prefix = "order")]
-struct Order;
-
-type UserId = UuidEntityId<User>;
-type OrderId = UlidEntityId<Order>;
-
-// Convert from an external system's user ID to our internal format
-fn import_external_user(external_id: &str) -> Result<UserId, String> {
-    // The external system uses raw UUIDs without prefixes
-    UserId::from_raw_str(external_id)
-        .map_err(|e| format!("Failed to import user: {}", e))
-}
-
-// Export our internal ID to a format the external system expects
-fn export_order_to_external_system(order_id: &OrderId) -> String {
-    // The external system needs just the ULID part without our prefix
-    order_id.id_str().to_string()
-}
-
-// Convert a batch of IDs from an external system
-fn import_user_batch(external_ids: &[String]) -> Vec<UserId> {
-    external_ids
-        .iter()
-        .filter_map(|id| UserId::from_raw_str(id).ok())
-        .collect()
-}
+// Works directly with EntityId thanks to AsRef<str>
+process_string(user_id);
 ```
 
 ## Choosing Between UUID and ULID

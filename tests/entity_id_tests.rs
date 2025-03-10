@@ -162,3 +162,79 @@ fn test_into_trait() {
     let ulid_id: UlidIdentifier = post_id.clone().into();
     assert_eq!(post_id.identifier(), &ulid_id);
 }
+
+#[test]
+fn test_error_traits() {
+    use entid::{EntityIdError, IdentifierError};
+
+    // Test AsRef<str> for EntityIdError
+    let err = EntityIdError::InvalidFormat;
+    let err_str: &str = err.as_ref();
+    assert_eq!(err_str, "The provided ID has an invalid format");
+
+    // Test Into<String> for EntityIdError
+    let err_string: String = err.into();
+    assert_eq!(err_string, "The provided ID has an invalid format");
+
+    // Test Into<String> for &EntityIdError
+    let err = EntityIdError::InvalidIdentifier;
+    let err_string: String = (&err).into();
+    assert_eq!(err_string, "ID must contain a valid identifier");
+
+    // Test Into<String> for IdentifierError
+    let uuid_err = uuid::Uuid::parse_str("not-a-uuid").unwrap_err();
+    let err = IdentifierError::Uuid(uuid_err);
+    let err_string: String = err.into();
+    assert!(err_string.starts_with("Invalid UUID format:"));
+
+    // Create a new error for testing methods
+    let uuid_err = uuid::Uuid::parse_str("not-a-uuid").unwrap_err();
+    let err = IdentifierError::Uuid(uuid_err.clone());
+
+    // Test error_message method
+    let err_message = err.error_message();
+    assert_eq!(err_message, uuid_err.to_string());
+
+    // Test uuid_error method
+    assert!(err.uuid_error().is_some());
+    assert!(err.ulid_error().is_none());
+
+    // Test Into<String> for &IdentifierError
+    let ulid_err = ulid::DecodeError::InvalidLength;
+    let err = IdentifierError::Ulid(ulid_err.clone());
+    let err_string: String = (&err).into();
+    assert!(err_string.starts_with("Invalid ULID format:"));
+
+    // Test ulid_error method
+    assert!(err.ulid_error().is_some());
+    assert!(err.uuid_error().is_none());
+
+    // Test error_message method for ULID error
+    let err_message = err.error_message();
+    assert_eq!(err_message, ulid_err.to_string());
+
+    // Test Display implementation
+    let err_string = format!("{}", err);
+    assert!(err_string.starts_with("Invalid ULID format:"));
+}
+
+#[test]
+fn test_conversion_methods() {
+    // Test to_raw_string method
+    let user_id = UuidEntityId::<User>::generate();
+    let raw_string = user_id.to_raw_string();
+    assert_eq!(raw_string, user_id.id_str().to_string());
+
+    // Test to_identifier method
+    let uuid_identifier = user_id.to_identifier();
+    assert_eq!(uuid_identifier, *user_id.identifier());
+
+    // Test AsRef<str> implementation
+    let id_str: &str = user_id.as_ref();
+    assert_eq!(id_str, user_id.as_str());
+
+    // Test Borrow<str> implementation
+    use std::borrow::Borrow;
+    let id_str_borrow: &str = user_id.borrow();
+    assert_eq!(id_str_borrow, user_id.as_str());
+}

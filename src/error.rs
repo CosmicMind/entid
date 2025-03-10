@@ -23,6 +23,27 @@ impl Display for EntityIdError {
 
 impl Error for EntityIdError {}
 
+impl AsRef<str> for EntityIdError {
+    fn as_ref(&self) -> &str {
+        match self {
+            EntityIdError::InvalidFormat => "The provided ID has an invalid format",
+            EntityIdError::InvalidIdentifier => "ID must contain a valid identifier",
+        }
+    }
+}
+
+impl From<EntityIdError> for String {
+    fn from(err: EntityIdError) -> Self {
+        err.as_ref().to_string()
+    }
+}
+
+impl From<&EntityIdError> for String {
+    fn from(err: &EntityIdError) -> Self {
+        err.as_ref().to_string()
+    }
+}
+
 /// **Wrapper for identifier-specific errors**
 #[derive(Debug)]
 pub enum IdentifierError {
@@ -35,8 +56,8 @@ pub enum IdentifierError {
 impl Display for IdentifierError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            IdentifierError::Uuid(err) => write!(f, "UUID error: {}", err),
-            IdentifierError::Ulid(err) => write!(f, "ULID error: {}", err),
+            IdentifierError::Uuid(err) => write!(f, "Invalid UUID format: {}", err),
+            IdentifierError::Ulid(err) => write!(f, "Invalid ULID format: {}", err),
         }
     }
 }
@@ -59,5 +80,49 @@ impl From<uuid::Error> for IdentifierError {
 impl From<ulid::DecodeError> for IdentifierError {
     fn from(err: ulid::DecodeError) -> Self {
         IdentifierError::Ulid(err)
+    }
+}
+
+impl From<IdentifierError> for String {
+    fn from(err: IdentifierError) -> Self {
+        match &err {
+            IdentifierError::Uuid(uuid_err) => format!("Invalid UUID format: {}", uuid_err),
+            IdentifierError::Ulid(ulid_err) => format!("Invalid ULID format: {}", ulid_err),
+        }
+    }
+}
+
+impl From<&IdentifierError> for String {
+    fn from(err: &IdentifierError) -> Self {
+        match err {
+            IdentifierError::Uuid(uuid_err) => format!("Invalid UUID format: {}", uuid_err),
+            IdentifierError::Ulid(ulid_err) => format!("Invalid ULID format: {}", ulid_err),
+        }
+    }
+}
+
+impl IdentifierError {
+    /// Get the underlying UUID error, if this is a UUID error
+    pub fn uuid_error(&self) -> Option<&uuid::Error> {
+        match self {
+            IdentifierError::Uuid(err) => Some(err),
+            _ => None,
+        }
+    }
+
+    /// Get the underlying ULID error, if this is a ULID error
+    pub fn ulid_error(&self) -> Option<&ulid::DecodeError> {
+        match self {
+            IdentifierError::Ulid(err) => Some(err),
+            _ => None,
+        }
+    }
+
+    /// Get the error message from the underlying error
+    pub fn error_message(&self) -> String {
+        match self {
+            IdentifierError::Uuid(err) => err.to_string(),
+            IdentifierError::Ulid(err) => err.to_string(),
+        }
     }
 }

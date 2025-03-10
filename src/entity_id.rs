@@ -177,6 +177,49 @@ impl<T: Prefix, I: Identifier> EntityId<T, I> {
         let id = I::parse(s).map_err(error_mapper)?;
         Ok(Self::from_identifier(id))
     }
+
+    /// **Convert to the raw identifier string (without prefix)**
+    ///
+    /// Returns the identifier part of the ID as an owned String, without the prefix and delimiter.
+    /// For example: "123e4567-e89b-12d3-a456-426614174000"
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use entid::{Prefix, UuidEntityId};
+    ///
+    /// #[derive(Prefix)]
+    /// #[entid(prefix = "user")]
+    /// struct User;
+    ///
+    /// let user_id = UuidEntityId::<User>::generate();
+    /// let raw_string = user_id.to_raw_string();
+    /// assert_eq!(raw_string, user_id.id_str().to_string());
+    /// ```
+    pub fn to_raw_string(&self) -> String {
+        self.id_str().to_string()
+    }
+
+    /// **Convert to the underlying identifier type**
+    ///
+    /// Returns a clone of the underlying identifier.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use entid::{Prefix, UuidEntityId, UuidIdentifier};
+    ///
+    /// #[derive(Prefix)]
+    /// #[entid(prefix = "user")]
+    /// struct User;
+    ///
+    /// let user_id = UuidEntityId::<User>::generate();
+    /// let uuid_identifier: UuidIdentifier = user_id.to_identifier();
+    /// assert_eq!(uuid_identifier, *user_id.identifier());
+    /// ```
+    pub fn to_identifier(&self) -> I {
+        self.id.clone()
+    }
 }
 
 /// **Implement `Hash` based on identifier**
