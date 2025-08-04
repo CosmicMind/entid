@@ -140,7 +140,7 @@ impl<T: Prefix, I: Identifier> EntityId<T, I> {
     ///
     /// #[derive(Prefix)]
     /// #[entid(prefix = "user")]
-    /// struct User;
+    /// pub struct User;
     ///
     /// // Parse a raw UUID string (without the "user_" prefix)
     /// let uuid_str = "123e4567-e89b-12d3-a456-426614174000";
@@ -163,11 +163,11 @@ impl<T: Prefix, I: Identifier> EntityId<T, I> {
     ///
     /// #[derive(Prefix)]
     /// #[entid(prefix = "user")]
-    /// struct User;
+    /// pub struct User;
     ///
     /// // Parse a raw UUID string with custom error handling
     /// let uuid_str = "123e4567-e89b-12d3-a456-426614174000";
-    /// let user_id = UuidEntityId::<User>::parse_raw_str(uuid_str, |e| format!("Invalid UUID: {}", e)).unwrap();
+    /// let user_id = UuidEntityId::<User>::parse_raw_str(uuid_str, |err| format!("Invalid UUID: {}", err)).unwrap();
     /// ```
     pub fn parse_raw_str<S, E, F>(s: S, error_mapper: F) -> Result<Self, E>
     where
@@ -190,7 +190,7 @@ impl<T: Prefix, I: Identifier> EntityId<T, I> {
     ///
     /// #[derive(Prefix)]
     /// #[entid(prefix = "user")]
-    /// struct User;
+    /// pub struct User;
     ///
     /// let user_id = UuidEntityId::<User>::generate();
     /// let raw_string = user_id.to_raw_string();
@@ -211,7 +211,7 @@ impl<T: Prefix, I: Identifier> EntityId<T, I> {
     ///
     /// #[derive(Prefix)]
     /// #[entid(prefix = "user")]
-    /// struct User;
+    /// pub struct User;
     ///
     /// let user_id = UuidEntityId::<User>::generate();
     /// let uuid_identifier: UuidIdentifier = user_id.to_identifier();
@@ -274,7 +274,7 @@ impl<T: Prefix, I: Identifier> Serialize for EntityId<T, I> {
     }
 }
 
-/// **Deserialization - Reconstruct from stored ID string**
+/// **Deserialization - Reconpub struct from stored ID string**
 impl<'de, T: Prefix, I: Identifier> Deserialize<'de> for EntityId<T, I> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where

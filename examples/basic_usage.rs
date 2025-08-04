@@ -7,14 +7,14 @@
 use entid::{Prefix, UlidEntityId, UuidEntityId};
 
 // Define entity types with custom prefixes
-struct User;
+pub struct User;
 impl Prefix for User {
     fn prefix() -> &'static str {
         "user"
     }
 }
 
-struct Post;
+pub struct Post;
 impl Prefix for Post {
     fn prefix() -> &'static str {
         "post"

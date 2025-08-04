@@ -8,17 +8,17 @@ use entid::{Prefix, UlidEntityId, UuidEntityId};
 #[cfg(feature = "derive")]
 #[derive(Prefix)]
 #[entid(prefix = "user", delimiter = "_")]
-struct User;
+pub struct User;
 
 #[cfg(feature = "derive")]
 #[derive(Prefix)]
 #[entid(prefix = "post", delimiter = "-")]
-struct Post;
+pub struct Post;
 
 #[cfg(feature = "derive")]
 #[derive(Debug, Prefix)]
 #[entid(prefix = "comment")]
-struct Comment;
+pub struct Comment;
 
 #[cfg(feature = "derive")]
 fn main() {

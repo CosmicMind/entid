@@ -32,16 +32,16 @@ pub fn delimiter(_attr: TokenStream, item: TokenStream) -> TokenStream {
 ///
 /// #[derive(Prefix)]
 /// #[entid(prefix = "user", delimiter = "_")]
-/// struct User;
+/// pub struct User;
 ///
 /// #[derive(Prefix)]
 /// #[entid(prefix = "post", delimiter = "-")]
-/// struct Post;
+/// pub struct Post;
 ///
 /// // The delimiter is optional and defaults to "_"
 /// #[derive(Prefix)]
 /// #[entid(prefix = "comment")]
-/// struct Comment;
+/// pub struct Comment;
 /// ```
 #[proc_macro_derive(Prefix, attributes(entid))]
 pub fn derive_prefix(input: TokenStream) -> TokenStream {

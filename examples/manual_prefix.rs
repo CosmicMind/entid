@@ -4,7 +4,7 @@ use entid::{Prefix, UlidEntityId, UuidEntityId};
 
 // Define entity types with manual implementation
 #[derive(Debug)]
-struct User;
+pub struct User;
 
 impl Prefix for User {
     fn prefix() -> &'static str {
@@ -13,7 +13,7 @@ impl Prefix for User {
 }
 
 #[derive(Debug)]
-struct Post;
+pub struct Post;
 
 impl Prefix for Post {
     fn prefix() -> &'static str {
@@ -26,7 +26,7 @@ impl Prefix for Post {
 }
 
 #[derive(Debug)]
-struct Comment;
+pub struct Comment;
 
 impl Prefix for Comment {
     fn prefix() -> &'static str {

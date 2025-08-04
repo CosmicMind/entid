@@ -8,14 +8,14 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use entid::{Prefix, UlidEntityId, UuidEntityId};
 
 // Define test entity types
-struct User;
+pub struct User;
 impl Prefix for User {
     fn prefix() -> &'static str {
         "user"
     }
 }
 
-struct Post;
+pub struct Post;
 impl Prefix for Post {
     fn prefix() -> &'static str {
         "post"

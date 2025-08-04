@@ -4,7 +4,7 @@ use entid::{Prefix, UuidEntityId};
 
 #[derive(Prefix)]
 #[entid(prefix = "user", delimiter = "_")]
-struct User;
+pub struct User;
 
 fn main() {
     let user_id = UuidEntityId::<User>::generate();

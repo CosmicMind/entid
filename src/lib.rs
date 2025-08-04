@@ -23,7 +23,7 @@
 //! ```rust
 //! use entid::{Identifier, Prefix, UuidEntityId};
 //!
-//! struct User;
+//! pub struct User;
 //!
 //! impl Prefix for User {
 //!     fn prefix() -> &'static str {
@@ -54,7 +54,7 @@
 //! use std::convert::TryFrom;
 //! use std::str::FromStr;
 //!
-//! struct User;
+//! pub struct User;
 //! impl Prefix for User {
 //!     fn prefix() -> &'static str { "user" }
 //! }
@@ -98,13 +98,13 @@
 //! # #[cfg(feature = "derive")]
 //! #[derive(Prefix)]
 //! #[entid(prefix = "user", delimiter = "_")]
-//! struct User;
+//! pub struct User;
 //!
 //! # #[cfg(feature = "derive")]
 //! // The delimiter is optional and defaults to "_"
 //! #[derive(Prefix)]
 //! #[entid(prefix = "comment")]
-//! struct Comment;
+//! pub struct Comment;
 //!
 //! # #[cfg(feature = "derive")]
 //! fn main() {

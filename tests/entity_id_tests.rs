@@ -4,7 +4,7 @@ use entid::{EntityId, Prefix, UlidEntityId, UlidIdentifier, Uuid, UuidEntityId, 
 
 // Define test entity types
 #[derive(Debug)]
-struct User;
+pub struct User;
 impl Prefix for User {
     fn prefix() -> &'static str {
         "user"
@@ -12,7 +12,7 @@ impl Prefix for User {
 }
 
 #[derive(Debug)]
-struct Post;
+pub struct Post;
 impl Prefix for Post {
     fn prefix() -> &'static str {
         "post"

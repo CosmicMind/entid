@@ -8,7 +8,7 @@ use entid::{EntityId, Prefix, UlidIdentifier, Uuid, UuidIdentifier};
 use serde::{Deserialize, Serialize};
 
 // Define entity types
-struct ApiKey;
+pub struct ApiKey;
 impl Prefix for ApiKey {
     fn prefix() -> &'static str {
         "key"
@@ -16,16 +16,16 @@ impl Prefix for ApiKey {
 }
 
 #[derive(Debug)]
-struct Order;
+pub struct Order;
 impl Prefix for Order {
     fn prefix() -> &'static str {
         "order"
     }
 }
 
-// A serializable struct that uses EntityId
+// A serializable pub struct that uses EntityId
 #[derive(Serialize, Deserialize, Debug)]
-struct OrderRecord {
+pub struct OrderRecord {
     id: EntityId<Order, UlidIdentifier>,
     customer_name: String,
     amount: f64,

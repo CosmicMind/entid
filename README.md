@@ -89,7 +89,7 @@ let raw_uuid = "123e4567-e89b-12d3-a456-426614174000";
 let user_id4 = UserId::from_raw_str(raw_uuid).unwrap();
 
 // Using parse_raw_str with custom error handling
-let user_id5 = UserId::parse_raw_str(raw_uuid, |e| format!("Invalid UUID: {}", e)).unwrap();
+let user_id5 = UserId::parse_raw_str(raw_uuid, |err| format!("Invalid UUID: {}", err)).unwrap();
 
 // Using TryFrom trait
 let user_id6 = UserId::try_from(id_str).unwrap();
@@ -156,7 +156,7 @@ use entid::{EntityId, Prefix, UuidIdentifier, UuidEntityId};
 type UserId = UuidEntityId::<User>;
 
 // Define your entity types with custom prefixes
-struct User;
+pub struct User;
 impl Prefix for User {
     fn prefix() -> &'static str {
         "user"
@@ -169,7 +169,7 @@ impl Prefix for User {
 
 type PostId = EntityId::<Post, UuidIdentifier>;
 
-struct Post;
+pub struct Post;
 impl Prefix for Post {
     fn prefix() -> &'static str {
         "post"
@@ -210,20 +210,20 @@ type UserId = UuidEntityId::<User>;
 
 #[derive(Prefix)]
 #[entid(prefix = "user", delimiter = "_")]
-struct User;
+pub struct User;
 
 type PostId = UlidEntityId::<Post>;
 
 #[derive(Prefix)]
 #[entid(prefix = "post", delimiter = "-")]
-struct Post;
+pub struct Post;
 
 type CommentId = UuidEntityId::<Comment>;
 
 // The delimiter is optional and defaults to "_"
 #[derive(Prefix)]
 #[entid(prefix = "comment")]
-struct Comment;
+pub struct Comment;
 
 fn main() {
     let user_id = UserId::generate();
@@ -244,7 +244,7 @@ use entid::{EntityId, Prefix, UlidIdentifier, UlidEntityId};
 
 type ProductId = UlidEntityId::<Product>;
 
-struct Product;
+pub struct Product;
 impl Prefix for Product {
     fn prefix() -> &'static str {
         "prod"
@@ -278,7 +278,7 @@ use entid::{EntityId, Prefix, UuidIdentifier, Uuid};
 
 type ApiKeyToken = EntityId::<ApiKey, UuidIdentifier>;
 
-struct ApiKey;
+pub struct ApiKey;
 impl Prefix for ApiKey {
     fn prefix() -> &'static str {
         "key"
@@ -313,13 +313,13 @@ use std::error::Error;
 
 #[derive(Prefix)]
 #[entid(prefix = "user")]
-struct User;
+pub struct User;
 
 type UserId = UuidEntityId<User>;
 
 // Convert errors to strings
 fn parse_user_id(input: &str) -> Result<UserId, String> {
-    UserId::new(input).map_err(|e| e.to_string()) // Use Display trait
+    UserId::new(input).map_err(|err| err.to_string()) // Use Display trait
 }
 
 // Get the specific error type
@@ -333,14 +333,14 @@ fn handle_id_error(input: &str) -> Result<UserId, String> {
                 _ => Err("Unknown identifier error".to_string()),
             }
         },
-        Err(e) => Err(e.to_string()),
+        Err(err) => Err(err.to_string()),
     }
 }
 
 // Access the underlying error directly
 fn process_with_detailed_errors<S: AsRef<str>>(input: S) -> Result<UserId, String> {
-    UserId::from_raw_str(input.as_ref()).map_err(|e| {
-        match e {
+    UserId::from_raw_str(input.as_ref()).map_err(|err| {
+        match err {
             EntityIdError::InvalidIdentifier => {
                 // Try to parse directly to get the specific error
                 match uuid::Uuid::parse_str(input.as_ref()) {
@@ -358,7 +358,7 @@ fn process_with_detailed_errors<S: AsRef<str>>(input: S) -> Result<UserId, Strin
                     _ => "Unknown identifier error".to_string(),
                 }
             },
-            _ => e.to_string(),
+            _ => err.to_string(),
         }
     })
 }
@@ -380,7 +380,7 @@ use entid::{EntityId, EntityIdError, IdentifierError, Prefix, UuidIdentifier};
 
 type UserId = EntityId<User, UuidIdentifier>;
 
-struct User;
+pub struct User;
 impl Prefix for User {
     fn prefix() -> &'static str {
         "user"
@@ -419,7 +419,7 @@ fn parse_raw_identifier(input: &str) -> Result<UuidIdentifier, IdentifierError> 
 use entid::{EntityId, Prefix, UlidIdentifier};
 use serde::{Serialize, Deserialize};
 
-struct Order;
+pub struct Order;
 impl Prefix for Order {
     fn prefix() -> &'static str {
         "order"
@@ -429,7 +429,7 @@ impl Prefix for Order {
 type OrderId = EntityId<Order, UlidIdentifier>;
 
 #[derive(Serialize, Deserialize)]
-struct OrderRecord {
+pub struct OrderRecord {
     id: OrderId,
     customer_name: String,
     amount: f64,
@@ -461,7 +461,7 @@ use entid::{EntityId, Prefix, UlidIdentifier};
 
 type TaskId = EntityId::<Task, UlidIdentifier>;
 
-struct Task;
+pub struct Task;
 impl Prefix for Task {
     fn prefix() -> &'static str {
         "task"
@@ -488,7 +488,7 @@ use entid::{EntityId, Prefix, UuidIdentifier};
 
 type ApiKeyToken = EntityId<ApiKey, UuidIdentifier>;
 
-struct ApiKey;
+pub struct ApiKey;
 impl Prefix for ApiKey {
     fn prefix() -> &'static str {
         "token"
@@ -516,7 +516,7 @@ use entid::{Prefix, UuidEntityId, UuidIdentifier};
 
 #[derive(Prefix)]
 #[entid(prefix = "user")]
-struct User;
+pub struct User;
 
 type UserId = UuidEntityId<User>;
 
