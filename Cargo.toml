@@ -12,8 +12,8 @@ categories = ["data-structures"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
-uuid = { version = "1.0", features = ["v4", "v5", "serde"] }
-ulid = { version = "1.0", features = ["serde"] }
+uuid = { version = "1.18", features = ["v4", "v5", "serde"] }
+ulid = { version = "1.2", features = ["serde"] }
 entid-derive = { path = "./entid-derive", version = "0.4.3", optional = true }
 
 [dev-dependencies]
